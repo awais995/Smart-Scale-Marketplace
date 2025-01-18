@@ -1,22 +1,18 @@
 "use client";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { GoChevronRight } from "react-icons/go";
 import Link from "next/link";
-import products from "../products.json";
 
 const CategoryPage: React.FC = () => {
+  const [products, setProducts] = useState<any[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [selectedColor, setSelectedColor] = useState<string>("green");
   const [selectedSize, setSelectedSize] = useState<string>("Large");
   const [sortBy, setSortBy] = useState<string>("Most Popular");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [filteredProducts, setFilteredProducts] = useState(products);
-
-  // States for price range
-  const [priceRange, setPriceRange] = useState<[number, number]>([50, 200]);
-  const [selectedPrice, setSelectedPrice] = useState<number>(200);
-
-  // States for pagination
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [selectedPrice, setSelectedPrice] = useState<number>(1000);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const productsPerPage = 12;
 
@@ -34,6 +30,28 @@ const CategoryPage: React.FC = () => {
   ];
   const categories = ["T-shirts", "Shorts", "Shirts", "Hoodies", "Jeans"];
 
+  // Fetch data from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("/api/products"); // Adjust the API endpoint as per configuration
+        const data = await response.json();
+        setProducts(data);
+        setFilteredProducts(data);
+        // Set price range dynamically based on the fetched products
+        const prices = data.map((product: any) => product.price);
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        setPriceRange([minPrice, maxPrice]);
+        setSelectedPrice(maxPrice);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
   // Function to sort products based on the selected criteria
   const sortedProducts = () => {
     let sorted = [...filteredProducts];
@@ -41,8 +59,6 @@ const CategoryPage: React.FC = () => {
       sorted.sort((a, b) => a.price - b.price);
     } else if (sortBy === "Price: High to Low") {
       sorted.sort((a, b) => b.price - a.price);
-    } else if (sortBy === "Most Popular") {
-      sorted.sort((a, b) => b.rating - a.rating);
     }
     return sorted;
   };
@@ -56,7 +72,7 @@ const CategoryPage: React.FC = () => {
         product.price <= selectedPrice
     );
     setFilteredProducts(filtered);
-    setCurrentPage(1); // Reset to the first page when filters are applied
+    setCurrentPage(1);
   };
 
   // Function to calculate products for the current page
@@ -173,7 +189,6 @@ const CategoryPage: React.FC = () => {
 
       {/* Product Grid Section */}
       <div className="w-full lg:w-3/4 xl:w-4/5">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
           <h1 className="text-2xl font-bold mb-2 sm:mb-0">Casual</h1>
           <div className="text-sm text-gray-500">
@@ -193,28 +208,18 @@ const CategoryPage: React.FC = () => {
         {/* Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-6">
           {paginatedProducts().map((product) => (
-            <Link key={product.id} href={`/productpage/${product.id}`}>
+            <Link key={product._id} href={`/productpage/${product._id}`}>
               <div className="border rounded-lg p-4 shadow hover:shadow-lg transition">
                 <Image
-                  src={product.image}
+                  src={product.imageUrl}
                   alt={product.name}
                   width={192}
                   height={192}
                   className="w-full h-72 object-cover rounded"
                 />
                 <h2 className="mt-4 text-lg font-semibold">{product.name}</h2>
-                <div className="flex items-center mt-2">
-                  <span className="text-yellow-500">
-                    {"★".repeat(Math.floor(product.rating))}
-                    {"☆".repeat(5 - Math.floor(product.rating))}
-                  </span>
-                  <span className="ml-2 text-sm text-gray-500">{product.rating}/5</span>
-                </div>
                 <div className="mt-4">
                   <span className="text-lg font-bold">${product.price}</span>
-                  {product.originalPrice && (
-                    <span className="ml-2 text-sm line-through text-gray-500">${product.originalPrice}</span>
-                  )}
                 </div>
               </div>
             </Link>
