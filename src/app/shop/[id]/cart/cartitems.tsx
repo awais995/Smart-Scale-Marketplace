@@ -1,40 +1,55 @@
 "use client";
+
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import products from "../../../products.json";
 
 const CartItem = () => {
-  const { productDetails } = useParams(); // Fetch `productDetails` from the URL
   const [cart, setCart] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch cart data from localStorage on component mount
+  // Fetch products from the API
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch("/api/products");
+      if (!response.ok) throw new Error("Failed to fetch products");
+      const data = await response.json();
+      setProducts(data);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch cart data from localStorage
   useEffect(() => {
     const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    console.log("Stored Cart from localStorage: ", storedCart); // Log cart data for debugging
     setCart(storedCart);
   }, []);
 
-  const removeFromCart = (id: number) => {
-    // Remove product from cart based on its ID
+  // Fetch products on component mount
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const removeFromCart = (id: string) => {
     const updatedCart = cart.filter((item: any) => item.id !== id);
-    // Update the state and localStorage
     setCart(updatedCart);
     localStorage.setItem("cart", JSON.stringify(updatedCart));
-    console.log("Updated Cart: ", updatedCart); // Log updated cart for debugging
   };
 
-  if (cart.length === 0) {
-    return <div>Your cart is empty!</div>;
-  }
+  if (loading) return <div>Loading...</div>;
+
+  if (cart.length === 0) return <div>Your cart is empty!</div>;
 
   return (
     <div>
       {cart.map((cartItem: any) => {
-        // Find the product details from products.json for each item in the cart
-        const product = products.find((item) => item.id === cartItem.id);
+        // Find product details from the fetched products array
+        const product = products.find((item: any) => item._id === cartItem.id);
 
         if (!product) {
-          return <div key={cartItem.id}>Product not found in products.json</div>;
+          return <div key={cartItem.id}>Product not found</div>;
         }
 
         return (
@@ -42,7 +57,7 @@ const CartItem = () => {
             {/* Product Image */}
             <div className="flex items-center gap-4">
               <img
-                src={product.image}
+                src={product.imageUrl}
                 alt={product.name}
                 className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-md"
               />
@@ -61,7 +76,9 @@ const CartItem = () => {
             </div>
 
             {/* Price */}
-            <div className="text-md md:text-lg font-bold">${(product.price * cartItem.quantity).toFixed(2)}</div>
+            <div className="text-md md:text-lg font-bold">
+              ${(product.price * cartItem.quantity).toFixed(2)}
+            </div>
 
             {/* Remove Button */}
             <button
