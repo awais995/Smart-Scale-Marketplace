@@ -13,7 +13,7 @@ const Header = () => {
 
   // Simulate user data (you can replace this with actual user data)
   const user = {
-    username: "JohnDoe",
+    username: "Awais",
     balance: 120.50,
     orders: 5,
   };
@@ -87,7 +87,7 @@ const Header = () => {
 
         {/* Desktop Navigation Links */}
         <div className="hidden md:flex items-center space-x-6">
-          <Link href="/" className="hover:text-gray-600">
+          <Link href="/shop" className="hover:text-gray-600">
             Shop
           </Link>
           <Link href="#on-sale" className="hover:text-gray-600">

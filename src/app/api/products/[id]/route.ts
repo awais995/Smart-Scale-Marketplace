@@ -9,6 +9,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       *[_type == "products" && _id == $id][0] {
         _id,
         name,
+        image,
+        imageslist,
         price,
         description,
         "imageUrl": image.asset->url,

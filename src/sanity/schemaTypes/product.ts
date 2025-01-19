@@ -37,16 +37,29 @@ export default {
         Rule.required().error('An image is required for the product.'),
     },
     {
+      name: 'imageslist',
+      type: 'array',
+      title: 'Images List',
+      of: [
+        {
+          type: 'image',
+          options: {
+            hotspot: true, // Enables cropping
+          },
+        },
+      ],
+    },
+    {
       name: 'category',
       title: 'Category',
       type: 'string',
       options: {
         list: [
-          { title: 'T-Shirt', value: 'tshirt' },
-          { title: 'Short', value: 'short' },
-          { title: 'Jeans', value: 'jeans' },
-          { title: 'Hoodie', value: 'hoodie' },
-          { title: 'Shirt', value: 'shirt' },
+          { title: 'T-Shirts', value: 'T-Shirts' },
+          { title: 'Shorts', value: 'Shorts' },
+          { title: 'Jeans', value: 'jJeans' },
+          { title: 'Hoodies', value: 'Hoodies' },
+          { title: 'Shirts', value: 'Shirts' },
         ],
       },
       validation: (Rule: ValidationRule) =>

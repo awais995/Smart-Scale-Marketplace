@@ -14,7 +14,7 @@ import Link from "next/link";
               Browse through our diverse range of meticulously crafted garments,
               designed to bring out your individuality and cater to your sense of style.
             </p>
-            <Link href="/productpage">
+            <Link href="/shop">
             <button className="bg-black text-white px-6 py-3 rounded-lg hover:scale-105 transition-transform">
               Shop Now
             </button></Link>

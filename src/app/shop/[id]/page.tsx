@@ -2,15 +2,15 @@
 
 import React from 'react';
 import ProductDetail from './productdetail';
-import Reviews from './review';
-import { OtherProducts } from './likes';
+import ProductReviews from '@/components/ProductReviews';
+import {RelatedProducts} from '@/components/RelatedProducts';
 
 const page = () => {
   return (
     <div>
       <ProductDetail  /> {/* Example static ID */}
-      <Reviews />
-      <OtherProducts />
+      <ProductReviews />
+      <RelatedProducts />
     </div>
   );
 };
