@@ -1,6 +1,6 @@
 import { Rule as ValidationRule } from '@sanity/types';
 
-export default {
+const productSchema = {
   name: 'products',
   title: 'Products',
   type: 'document',
@@ -57,7 +57,7 @@ export default {
         list: [
           { title: 'T-Shirts', value: 'T-Shirts' },
           { title: 'Shorts', value: 'Shorts' },
-          { title: 'Jeans', value: 'jJeans' },
+          { title: 'Jeans', value: 'Jeans' },
           { title: 'Hoodies', value: 'Hoodies' },
           { title: 'Shirts', value: 'Shirts' },
         ],
@@ -74,7 +74,7 @@ export default {
     },
     {
       name: 'new',
-      title: '  New',
+      title: 'New',
       type: 'boolean',
       validation: (Rule: ValidationRule) =>
         Rule.required().error('Please specify whether the product is new.'),
@@ -100,11 +100,13 @@ export default {
           .error('At least one size must be specified for the product.'),
     },
     {
-        name: 'isNew',
-        title: 'Is New',
-        type: 'boolean',
-        validation: (Rule: ValidationRule) =>
-          Rule.required().error('Please specify whether the product is new.'),
-      },
+      name: 'isNew',
+      title: 'Is New',
+      type: 'boolean',
+      validation: (Rule: ValidationRule) =>
+        Rule.required().error('Please specify whether the product is new.'),
+    },
   ],
 };
+
+export default productSchema;

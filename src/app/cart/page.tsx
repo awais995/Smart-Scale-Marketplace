@@ -1,23 +1,40 @@
 "use client";
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-const CartPage = () => {
-  const [cart, setCart] = useState<any[]>([]);
+interface CartItem {
+  id: number;
+  name: string;
+  image: string;
+  price: number;
+  quantity: number;
+  discount?: number;
+  deliveryFee?: number;
+  size?: string;
+  color?: string;
+}
+
+const CartPage: React.FC = () => {
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   useEffect(() => {
-    const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    setCart(storedCart);
+    if (typeof window !== "undefined") {
+      const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
+      setCart(storedCart);
+    }
   }, []);
 
   const handleRemoveFromCart = (id: number) => {
     const updatedCart = cart.filter((item) => item.id !== id);
     setCart(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
+    }
   };
 
-  const calculateTotals = () => {
+  const { cartDetails, grandTotal } = useMemo(() => {
     let grandTotal = 0;
     const cartDetails = cart.map((item) => {
       const subtotal = item.price * item.quantity;
@@ -33,14 +50,13 @@ const CartPage = () => {
       };
     });
     return { cartDetails, grandTotal };
-  };
-
-  const { cartDetails, grandTotal } = calculateTotals();
+  }, [cart]);
 
   return (
     <div className="container mx-auto px-6 py-10">
-        
-      <h1 className="text-3xl font-extrabold mb-8 text-gray-800">Shopping Cart</h1>
+      <h1 className="text-3xl font-extrabold mb-8 text-gray-800">
+        Shopping Cart
+      </h1>
 
       {cart.length === 0 ? (
         <p className="text-lg text-gray-600">Your cart is empty.</p>
@@ -53,7 +69,6 @@ const CartPage = () => {
                 key={cartItem.id}
                 className="flex items-center justify-between border-b pb-4 mb-6"
               >
-                {/* Product Image and Details */}
                 <div className="flex items-center gap-6">
                   <Image
                     src={cartItem.image}
@@ -61,67 +76,81 @@ const CartPage = () => {
                     width={80}
                     height={80}
                     className="w-20 h-20 object-cover rounded-md"
-                    
                   />
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-800">{cartItem.name}</h2>
+                    <h2 className="text-lg font-semibold text-gray-800">
+                      {cartItem.name}
+                    </h2>
                     <p className="text-sm text-gray-500">
-                      Size: <span className="text-gray-800">{cartItem.size}</span>
+                      Size:{" "}
+                      <span className="text-gray-800">
+                        {cartItem.size || "N/A"}
+                      </span>
                     </p>
                     <p className="text-sm text-gray-500">
-                      Color: <span className="text-gray-800">{cartItem.color}</span>
+                      Color:{" "}
+                      <span className="text-gray-800">
+                        {cartItem.color || "N/A"}
+                      </span>
                     </p>
                     <p className="text-sm text-gray-500">
-                      Quantity: <span className="text-gray-800">{cartItem.quantity}</span>
+                      Quantity:{" "}
+                      <span className="text-gray-800">{cartItem.quantity}</span>
                     </p>
                   </div>
                 </div>
-
                 <div className="flex gap-10">
-                    {/* Price */}
-                <div className="text-lg font-bold text-gray-800">
-                  ${cartItem.price.toFixed(2)}
+                  <div className="text-lg font-bold text-gray-800">
+                    ${cartItem.price.toFixed(2)}
+                  </div>
+                  <button
+                    onClick={() => handleRemoveFromCart(cartItem.id)}
+                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                    aria-label={`Remove ${cartItem.name} from cart`}
+                  >
+                    Remove
+                  </button>
                 </div>
-
-                {/* Remove Button */}
-                <button
-                  onClick={() => handleRemoveFromCart(cartItem.id)}
-                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
-                  aria-label="Remove item from cart"
-                >
-                  Remove
-                </button>
-                </div>
-                
               </div>
             ))}
           </div>
 
           {/* Order Summary */}
           <div className="lg:w-1/3 border rounded-[30px]">
-            <div className=" p-6 rounded-lg shadow-md ">
-              <h2 className="text-xl font-semibold mb-6 text-gray-800">Order Summary</h2>
+            <div className="p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-6 text-gray-800">
+                Order Summary
+              </h2>
               {cartDetails.map((item) => (
                 <div key={item.id} className="mb-4 border-b pb-4">
-                  <h3 className="text-lg font-bold text-gray-800">{item.name}</h3>
+                  <h3 className="text-lg font-bold text-gray-800">
+                    {item.name}
+                  </h3>
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Quantity</span>
                     <span>{item.quantity}</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Subtotal</span>
-                    <span className="font-bold">${item.subtotal.toFixed(2)}</span>
+                    <span className="font-bold">
+                      ${item.subtotal.toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Discount</span>
-                    <span className="text-red-500">-${item.discountAmount.toFixed(2)}</span>
+                    <span className="text-red-500">
+                      -${item.discountAmount.toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Delivery Fee</span>
                     <span>
-                      {item.deliveryFee > 0 ? `$${item.deliveryFee.toFixed(2)}` : "Free"}
+                      {item.deliveryFee && item.deliveryFee > 0
+                        ? `$${item.deliveryFee.toFixed(2)}`
+                        : "Free"}
                     </span>
                   </div>
+
                   <div className="flex justify-between text-lg font-bold text-gray-800">
                     <span>Total</span>
                     <span>${item.total.toFixed(2)}</span>
@@ -148,7 +177,7 @@ const CartPage = () => {
               </div>
 
               {/* Checkout Button */}
-              <Link href={`/checkout`}>
+              <Link href="/checkout">
                 <button className="w-full bg-black text-white mt-6 py-3 rounded-lg text-lg font-semibold hover:bg-blue-600 transition-colors">
                   Go to Checkout →
                 </button>
