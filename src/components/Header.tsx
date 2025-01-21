@@ -1,17 +1,22 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
+// Product type for TypeScript
+interface Product {
+  _id: number;
+  name: string;
+  category: string;
+}
 
 const Header = () => {
-  
-
   const [isPromoOpen, setIsPromoOpen] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // State for the hamburger menu
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Simulate login state
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false); // Dropdown for profile
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(""); // Search query
+  const [searchResults, setSearchResults] = useState<Product[]>([]); // Search results
 
-  // Simulate user data (you can replace this with actual user data)
   const user = {
     username: "Awais",
     balance: 120.50,
@@ -19,17 +24,35 @@ const Header = () => {
   };
 
   const handleProfileClick = () => {
-    setIsProfileMenuOpen(!isProfileMenuOpen); // Toggle profile dropdown
+    setIsProfileMenuOpen(!isProfileMenuOpen);
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false); // Simulate user logout
-    setIsProfileMenuOpen(false); // Close the dropdown after logout
+    setIsLoggedIn(false);
+    setIsProfileMenuOpen(false);
+  };
+
+  const handleSearchChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const query = event.target.value;
+    setSearchQuery(query);
+
+    if (query.length > 2) {
+      // Fetch data from API only if the search query is longer than 2 characters
+      const response = await fetch(`/api/products?search=${query}`);
+      const data = await response.json();
+      setSearchResults(data); // Set search results
+    } else {
+      setSearchResults([]); // Clear results if query is too short
+    }
+  };
+
+  const handleProductClick = () => {
+    setSearchQuery(""); // Clear search query
+    setSearchResults([]); // Hide search results after clicking a product
   };
 
   return (
     <header className="w-full relative z-20">
-      {/* Promo Banner */}
       {isPromoOpen && (
         <div className="relative bg-black text-white text-center py-2 text-sm">
           <p>
@@ -40,7 +63,7 @@ const Header = () => {
           </p>
           <button
             onClick={() => setIsPromoOpen(false)}
-            className="absolute right-4 top-1/2 -translate-y-1/2"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-white"
           >
             ×
           </button>
@@ -107,7 +130,9 @@ const Header = () => {
             <input
               type="text"
               placeholder="Search for products..."
-              className="w-full px-4 py-2 md:text-[12px] bg-gray-100 rounded-lg focus:outline-none"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full px-4 py-2 md:text-sm bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button className="absolute right-3 top-1/2 -translate-y-1/2">
               <svg
@@ -127,9 +152,27 @@ const Header = () => {
           </div>
         </div>
 
+        {/* Display Search Results */}
+        {searchResults.length > 0 && (
+          <div className="absolute bg-white top-20 text-black shadow-lg w-full z-10 mt-2 rounded-lg max-h-60 overflow-y-auto">
+            <ul>
+              {searchResults.map((product) => (
+                <li key={product._id} className="px-4 py-2 hover:bg-gray-200">
+                  <Link
+                    href={`/shop/${product._id}`}
+                    onClick={handleProductClick} // Hide search results on product click
+                  >
+                    {product.name} - {product.category}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Cart & Account */}
         <div className="flex items-center space-x-4">
-          <Link href={`/productpage/5/cart`}>
+          <Link href={`/cart`}>
             <svg
               className="w-6 h-6"
               fill="none"
@@ -208,26 +251,6 @@ const Header = () => {
             )}
           </div>
         </div>
-
-        {/* Mobile Navigation Menu */}
-        {isMenuOpen && (
-          <div className="absolute top-full z-10 left-0 w-full bg-black text-white shadow-lg md:hidden">
-            <div className="flex flex-col items-center space-y-4 py-4">
-              <Link href="/productpage" className="hover:text-gray-600">
-                Shop
-              </Link>
-              <Link href="#on-sale" className="hover:text-gray-600">
-                On Sale
-              </Link>
-              <Link href="#new-arrivals" className="hover:text-gray-600">
-                New Arrivals
-              </Link>
-              <Link href="#brands" className="hover:text-gray-600">
-                Brands
-              </Link>
-            </div>
-          </div>
-        )}
       </nav>
     </header>
   );

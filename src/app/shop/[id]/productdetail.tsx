@@ -4,12 +4,19 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { urlFor } from "@/sanity/lib/image";
+import Link from "next/link";
 
 const ProductDetailPage: React.FC = () => {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string;
+
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [notification, setNotification] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -18,8 +25,8 @@ const ProductDetailPage: React.FC = () => {
         if (!res.ok) throw new Error("Failed to fetch product details");
         const data = await res.json();
         setProduct(data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        if (err instanceof Error) setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -28,6 +35,58 @@ const ProductDetailPage: React.FC = () => {
     fetchProduct();
   }, [id]);
 
+  const handleColorChange = (color: string) => setSelectedColor(color);
+  const handleSizeChange = (size: string) => setSelectedSize(size);
+
+  const handleQuantityChange = (operation: string) => {
+    setQuantity((prevQuantity) => {
+      if (operation === "increment" && prevQuantity < 10) {
+        return prevQuantity + 1;
+      }
+      if (operation === "decrement" && prevQuantity > 1) {
+        return prevQuantity - 1;
+      }
+      return prevQuantity;
+    });
+  };
+
+  const handleAddToCart = () => {
+    if (!selectedColor || !selectedSize) {
+      setNotification("Please select a color and size.");
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      image: product.image,
+      price: product.price,
+      color: selectedColor,
+      size: selectedSize,
+      quantity,
+    };
+
+    const existingCart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+    const existingProductIndex = existingCart.findIndex(
+      (item: any) =>
+        item.id === product.id &&
+        item.color === selectedColor &&
+        item.size === selectedSize
+    );
+
+    if (existingProductIndex > -1) {
+      existingCart[existingProductIndex].quantity += quantity;
+    } else {
+      existingCart.push(cartItem);
+    }
+
+    localStorage.setItem("cart", JSON.stringify(existingCart));
+    setNotification("Successfully added to cart");
+    setTimeout(() => setNotification(null), 3000);
+  };
+
   if (loading) return <div>Loading product details...</div>;
   if (error) return <div>Error: {error}</div>;
 
@@ -35,29 +94,18 @@ const ProductDetailPage: React.FC = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 mb-6">
-        <a href="/" className="hover:text-black">
-          Home
-        </a>{" "}
-        &gt;{" "}
-        <a href="/shop" className="hover:text-black">
-          Shop
-        </a>{" "}
-        &gt; <span className="text-gray-700">{product.name}</span>
+        <Link href="/" className="hover:text-black">Home</Link> &gt;{" "}
+        <Link href="/shop" className="hover:text-black">Shop</Link> &gt;{" "}
+        <span className="text-gray-700">{product.name}</span>
       </nav>
 
       {/* Grid Layout */}
-      <div
-        className="grid grid-cols-1 lg:grid-cols-12 gap-8"
-        style={{ alignItems: "start" }}
-      >
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8" style={{ alignItems: "start" }}>
         {/* Thumbnail Bar */}
         <div className="hidden lg:block lg:col-span-2">
           <div className="grid gap-4">
             {product.imageslist.map((image: string, index: number) => (
-              <div
-                key={index}
-                className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition"
-              >
+              <div key={index} className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition">
                 <Image
                   src={urlFor(image).url()}
                   alt={`Thumbnail ${index + 1}`}
@@ -86,9 +134,7 @@ const ProductDetailPage: React.FC = () => {
         {/* Product Details */}
         <div className="lg:col-span-5">
           <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-          <p className="text-xl font-semibold text-gray-700 mb-4">
-            ${product.price}
-          </p>
+          <p className="text-xl font-semibold text-gray-700 mb-4">${product.price}</p>
           <p className="text-gray-600 text-sm mb-4">{product.description}</p>
 
           {/* Color Selection */}
@@ -99,8 +145,11 @@ const ProductDetailPage: React.FC = () => {
                 {product.colors.map((color: string) => (
                   <div
                     key={color}
-                    className="w-6 h-6 rounded-full cursor-pointer border"
+                    className={`w-6 h-6 rounded-full cursor-pointer border ${
+                      selectedColor === color ? "ring-2 ring-offset-2" : ""
+                    }`}
                     style={{ backgroundColor: color }}
+                    onClick={() => handleColorChange(color)}
                   ></div>
                 ))}
               </div>
@@ -115,7 +164,10 @@ const ProductDetailPage: React.FC = () => {
                 {product.sizes.map((size: string) => (
                   <button
                     key={size}
-                    className="px-4 py-2 border rounded hover:bg-gray-100"
+                    onClick={() => handleSizeChange(size)}
+                    className={`px-4 py-2 border rounded hover:bg-gray-100 ${
+                      selectedSize === size ? "bg-gray-300" : ""
+                    }`}
                   >
                     {size}
                   </button>
@@ -124,10 +176,36 @@ const ProductDetailPage: React.FC = () => {
             </div>
           )}
 
+          {/* Quantity Selection */}
+          <div className="flex items-center gap-4 mb-6">
+            <button
+              onClick={() => handleQuantityChange("decrement")}
+              className="px-4 py-2 border rounded hover:bg-gray-100"
+            >
+              -
+            </button>
+            <span className="text-lg font-semibold">{quantity}</span>
+            <button
+              onClick={() => handleQuantityChange("increment")}
+              className="px-4 py-2 border rounded hover:bg-gray-100"
+            >
+              +
+            </button>
+          </div>
+
           {/* Add to Cart Button */}
-          <button className="bg-black text-white px-6 py-3 rounded-lg mt-4">
+          {/* <Link href="/cart"> */}
+          <button
+            onClick={handleAddToCart}
+            className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition w-full sm:w-auto"
+            >
             Add to Cart
           </button>
+          {/* </Link> */}
+
+          {notification && (
+            <div className="mt-4 text-green-600 font-semibold">{notification}</div>
+          )}
         </div>
       </div>
     </div>
